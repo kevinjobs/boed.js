@@ -1,91 +1,126 @@
 import Block from "./boed-block";
 
-type Mount = string | Element;
+type BoedNode = string | HTMLElement;
 
 export interface Options {
-  mountNode?: Mount;
+  mountNode?: BoedNode;
+  header?: boolean | BoedHeader;
+  footer?: boolean | BoedFooter;
 }
 
-export default class Boed {
-  private _mountNode: Element = document.querySelector('#boedjs') || document.body;
-  private _containerNode: Element | null = null;
-  private _block = new Proxy<{
-    focused: HTMLElement | null,
-    items: Block[],
-    newItem: Block | null,
-  }>({focused: null, items: [], newItem: null}, {
-    set(target, property, value) {
-      if (property === 'newItem') {
-        target.items.push(value);
-        
-        if (target.focused) {
-          const n = value.create();
-          insertAfter(n, target.focused);
-          target.focused = n;
-        }
-      }
-      if (property === 'focused') {
-        target.focused = value;
-      }
+export class BoedHeader {}
 
+export class BoedFooter {}
+
+export default class Boed {
+  private _mountNode: BoedNode | null = document.querySelector<HTMLElement>('#boedjs');
+  private _headerNode: BoedNode | null = null;
+  private _containerNode: BoedNode | null = null;
+  public focusedBlock = new Proxy<{
+    value?: Block,
+    focus?(): void,
+    focused?: boolean,
+  }>({}, {
+    set(target, prop, value) {
+      if (prop === 'value') {
+        console.info(target, prop, value);
+        target.value = value;
+        target.value?.focus();
+        return true;
+      }
+      if (prop === 'blur') {
+        target.value?.blur();
+        return true;
+      }
       return true;
     },
-  });
-  private _focusedBlockEl: HTMLElement | null = null;
-  private _options: Options = {};
-
-  constructor(options: Options) {
-    if (options?.mountNode) {
-      this.mountNode = options.mountNode;
+    get(target, prop) {
+      if (prop === 'focused') return target.value?.focused;
+      if (prop === 'value') return target.value;
     }
+  })
 
-    this.initialize();
+  private _blocks: Block[] = [];
+
+  private _defaultOptions: Options = {
+    mountNode: '#boedjs',
+  };
+
+  constructor(private _options: Options) {
+    this.mergeOpts();
+    if (this._options.header) this.loadHeader();
+    if (this._options.footer) this.loadFooter();
+    this.loadContainer();
   }
 
-  private initialize() {
+  private loadHeader() {
+    //
+  }
+
+  private loadFooter() {
+    //
+  }
+
+  private loadContainer() {
     this._containerNode = this.createContainerNode();
-    this._mountNode.appendChild(this._containerNode);
-    const firstBlock = (new Block()).create();
-    this._containerNode.appendChild(firstBlock);
-    firstBlock.focus();
-    this._focusedBlockEl = firstBlock;
+    if (this._mountNode instanceof HTMLElement) {
+      this._mountNode.appendChild(this._containerNode);
+    }
+    this.appedDefaultBlock();
   }
 
   private createContainerNode() {
     const el = document.createElement('div');
     el.id = 'boed-container';
-    el.style.margin = '0';
+    el.style.margin = '0px';
 
     el.onkeydown = (evt) => {
-      // evt.preventDefault();
       if (evt.key === 'Enter') {
-        const target = evt?.target as HTMLElement;
-
         evt.preventDefault();
         evt.stopPropagation();
 
+        const target = evt.target as HTMLElement;
         // 如果行内没有输入任何字符或者都是空格，则回车无效
         if (!target.innerText.trim()) return;
 
-        this._block.focused = this._focusedBlockEl;
-        this._block.newItem = new Block();
-        this._focusedBlockEl = this._block.focused;
-        this._focusedBlockEl?.focus();
+        // 如果焦点在编辑器上，插入新的 block
+        if (this.focusedBlock?.focused) {
+          // 创建新 block
+          const b = new Block();
+          this._blocks.push(b);
+          const el = b.create();
+          if (this.focusedBlock.value?.target) {
+            insertAfter(el, this.focusedBlock?.value?.target);
+            // 聚焦至新的 block;
+            this.focusedBlock.value = b;
+          }
+        }
       }
     }
     el.onclick = (evt) => {
-      this._focusedBlockEl = evt.target as HTMLElement;
+      const target = evt.target as HTMLElement;
+      target.focus();
+    }
+    el.onfocus = (evt) => {
+      const target = evt.target as HTMLElement;
+      target.focus();
     }
     return el;
   }
 
-  set mountNode(value: Mount) {
-    if (typeof value === 'string') {
-      this._mountNode = document.querySelector(value) || document.body;
-    } else if (value instanceof Element) {
-      this._mountNode = value;
-    } else {
-      throw new Error("mount must be string or Element");
+  private mergeOpts() {
+    this._options = {...this._defaultOptions, ...this._options};
+  }
+
+  private appedDefaultBlock() {
+    if (this._blocks.length === 0) {
+      const b = new Block();
+      this._blocks.push(b);
+      const el = b.create();
+      if (this._containerNode instanceof HTMLElement) {
+        this._containerNode.appendChild(el);
+        this.focusedBlock.value = b;
+      }
     }
   }
 }

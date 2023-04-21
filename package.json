@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "rollup -c rollup.config.js"
+    "build:watch": "rollup -c rollup.config.js --watch",
+    "start": "concurrently \"pnpm build:watch\" \"serve\""
   },
   "keywords": [],
   "author": "",
@@ -15,5 +16,8 @@
     "rollup": "^3.20.2",
     "tslib": "^2.5.0",
     "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "concurrently": "^8.0.1"
   }
 }
