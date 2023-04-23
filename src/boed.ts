@@ -52,7 +52,7 @@ export default class Boed {
       const el = b.create();
       if (this._containerNode instanceof HTMLElement) {
         this._containerNode.appendChild(el);
-        this.setFocus(b);
+        this.setCurrentBlock(b);
       }
     }
   }
@@ -80,19 +80,22 @@ export default class Boed {
           const el = b.create();
           insertAfter(el, this.currentBlock?.target);
           // 聚焦至新的 block;
-          this.setFocus(b);
+          this.setCurrentBlock(b);
         }
       }
     }
     el.onclick = (evt) => {
       const target = evt.target as HTMLElement;
       const b = this.findBlock(target);
-      if (b) this.setFocus(b);
+      if (b) this.setCurrentBlock(b);
     }
     el.onfocus = (evt) => {
       const target = evt.target as HTMLElement;
       const b = this.findBlock(target);
-      if (b) this.setFocus(b);
+      if (b) this.setCurrentBlock(b);
+    }
+    el.onblur = () => {
+      this.setCurrentBlock(null);
     }
     return el;
   }
@@ -101,14 +104,16 @@ export default class Boed {
     this._options = {...this._defaultOptions, ...this._options};
   }
 
-  private setFocus(block: Block) {
+  private setCurrentBlock(block: Block | null) {
     this.currentBlock = block;
-    this.currentBlock.focus();
+    this.currentBlock?.focus();
   }
 
   private findBlock(el: HTMLElement) {
     for (const b of this._blocks) {
-      if (b.target == el) return b;
+      if (b.target == el) {
+        return b;
+      }
     }
   }
 }

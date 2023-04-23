@@ -12,54 +12,111 @@ export interface BlockProps {
   type: BlockType;
 }
 
+export interface BlockContent {
+  text: string;
+  html: string;
+  className: string;
+  id: string;
+  createAt: number | string;
+  type: BlockType;
+}
+
 export default class Block {
-  private _el: HTMLElement | null = null;
+  private _outerElement: HTMLElement | null = null;
+  private _containerElement: HTMLElement | null = null;
   private _props: BlockProps = {
     type: 'plain',
     className: 'boed-block',
   };
+  private _focused = new Proxy({
+    element: this._containerElement,
+    value: false,
+  }, {
+    set(target, prop, value) {
+      if (prop === 'element') {
+        target['element'] = value;
+        return true;
+      }
+      if (prop === 'value') {
+        target.value = value;
+        if (target.element && value) {
+          target.element.focus();
+        } else {
+          target.element?.blur();
+        }
+        return true;
+      }
+      return false;
+    }
+  });
 
   constructor(props?: BlockProps) {
     this._props = {...this._props, ...props};
   }
 
+  get json() :BlockContent {
+    return {
+      text: this._containerElement?.innerText || '',
+      html: this._containerElement?.innerHTML || '',
+      className: this._outerElement?.className || '',
+      id: this._outerElement?.id || '',
+      createAt: this._outerElement?.dataset?.create || '',
+      type: this._props.type,
+    }
+  }
+
   public create() {
-    const el = document.createElement(this.blockType());
-    el.contentEditable = 'true';
+    const outerEl = this.createOuter();
+    const containerEl = this.createContainer();
+    const operatorEl = this.createOperator();
+    outerEl.appendChild(operatorEl);
+    outerEl.appendChild(containerEl);
+
+    this._outerElement = outerEl;
+    this._containerElement = containerEl;
+
+    return outerEl;
+  }
+
+  private createOuter() {
+    const el = document.createElement('div');
     el.className = this._props.className;
     el.id = `boed-block-${(new Date()).valueOf()}`;
     el.dataset['create'] = String((new Date()).valueOf());
-    el.style.outline = 'none';
+    
     el.style.margin = '2px 0px';
     el.style.padding = '2px 8px';
-    el.style.backgroundColor = '#f1f1f1';
 
     el.onclick = () => {
-      el.focus();
+      this.focus();
     }
+    
+    return el;
+  }
+
+  private createContainer() {
+    const el = document.createElement(this.blockType());
+    el.contentEditable = 'true';
+    el.className = this._props.className + '-container';
+    el.id = `boed-block-container-${(new Date()).valueOf()}`;
+    el.style.outline = 'none';
+    el.style.display = 'inline-block';
+
     el.onfocus = () => {
-      el.style.backgroundColor = '#d1d3d7';
+      this.focus();
     }
     el.onblur = () => {
-      el.style.backgroundColor = '#f1f1f1';
-    }
-    el.onmouseenter = () => {
-      el.style.backgroundColor = '#dddddd';
-    }
-    el.onmousemove = () => {
-      el.style.backgroundColor = '#dddddd';
-    }
-    el.onmouseleave = () => {
-      el.style.backgroundColor = '#f1f1f1';
-    }
-    el.onkeydown = (evt) => {
-      if (evt.key === 'Enter') {
-
-      }
+      this.blur();
     }
 
-    this._el = el;
+    return el;
+  }
 
+  private createOperator() {
+    const el = document.createElement('span');
+    el.innerText = '+';
+    el.style.display = 'inline-block';
+    el.className = this._props.className + '-operator';
     return el;
   }
 
@@ -67,32 +124,34 @@ export default class Block {
     switch(this._props?.type) {
       case 'plain':
         return 'div';
+      case 'link':
+        return 'a';
       default:
         return 'div';
     }
   }
 
   get target() {
-    return this._el;
+    return this._outerElement;
   }
 
   focus() {
-    this.focused = true;
+    this._focused.element = this._containerElement;
+    // this property can be set.
+    // @ts-ignore
+    this._outerElement?.className = this._props.className + ' focused';
+    this._focused.value = true;
   }
 
   blur() {
-    this._el?.blur();
-  }
-
-  set focused(value: boolean) {
-    if (value) {
-      this._el?.focus();
-    } else {
-      this._el?.blur();
-    }
+    this._focused.element = this._containerElement;
+    // this property can be set.
+    // @ts-ignore
+    this._outerElement?.className = this._props.className;
+    this._focused.value = false;
   }
 
   get focused() {
-    return this._el?.id === document.activeElement?.id;
+    return this._containerElement?.id === document.activeElement?.id;
   }
 }
