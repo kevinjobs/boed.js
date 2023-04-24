@@ -1,130 +1,55 @@
-import Block from "./boed-block";
-
-type BoedNode = string | HTMLElement;
+import Blocks from "./blocks";
+import Block from "./components/block";
 
 export interface Options {
-  mountNode?: BoedNode;
-  header?: boolean | BoedHeader;
-  footer?: boolean | BoedFooter;
+  mountNode?: HTMLElement | null;
 }
-
-export class BoedHeader {}
-
-export class BoedFooter {}
 
 export default class Boed {
-  private _mountNode: BoedNode | null = document.querySelector<HTMLElement>('#boedjs');
-  private _headerNode: BoedNode | null = null;
-  private _containerNode: BoedNode | null = null;
-  private _footerNode: BoedNode | null = null;
-  private _blocks: Block[] = [];
-  private _defaultOptions: Options = { mountNode: '#boedjs' };
-
-  public currentBlock: Block | null = null;
+  private _blocks: Blocks | null;
+  private _defaultOptions: Options = {
+    mountNode: document.querySelector('#boedjs') as HTMLElement,
+  };
 
   constructor(private _options: Options) {
-    this.mergeOpts();
-    if (this._options.header) this.loadHeader();
-    if (this._options.footer) this.loadFooter();
-    this.loadContainer();
-  }
-
-  get blocks() {
-    return this._blocks;
-  }
-
-  private loadHeader() {
-    //
-  }
-
-  private loadFooter() {
-    //
-  }
-
-  private loadContainer() {
-    this._containerNode = this.createContainerNode();
-    if (this._mountNode instanceof HTMLElement) {
-      this._mountNode.appendChild(this._containerNode);
+    this._options = { ...this._defaultOptions, ..._options };
+    if (this._options.mountNode) {
+      this._blocks = new Blocks(this._options.mountNode);
+    } else {
+      const el = document.createElement('div');
+      el.id = 'boedjs';
+      document.appendChild(el);
+      this._blocks = new Blocks(el);
     }
-    if (this._blocks.length === 0) {
-      const b = new Block();
-      this._blocks.push(b);
-      const el = b.create();
-      if (this._containerNode instanceof HTMLElement) {
-        this._containerNode.appendChild(el);
-        this.setCurrentBlock(b);
-      }
-    }
+
+    this.listen('click', this.handleClick);
+    this.listen('keydown', this.handleKeydown);
   }
 
-  private createContainerNode() {
-    const el = document.createElement('div');
-    el.id = 'boed-container';
-    el.style.margin = '0px';
+  private handleClick(evt: HTMLElementEventMap['click'], that: Boed) {
+    const target = evt.target as HTMLElement;
+    that?._blocks?.focusOn(target);
+  }
 
-    el.onkeydown = (evt) => {
-      if (evt.key === 'Enter') {
-        evt.preventDefault();
-        evt.stopPropagation();
-
-        const target = evt.target as HTMLElement;
-        // 如果行内没有输入任何字符或者都是空格，则回车无效
-        // to-do: 是否允许空行需要考虑
-        if (!target.innerText.trim()) return;
-
-        // 如果焦点在编辑器上，插入新的 block
-        if (this.currentBlock?.focused) {
-          // 创建新 block
-          const b = new Block();
-          this._blocks.push(b);
-          const el = b.create();
-          insertAfter(el, this.currentBlock?.target);
-          // 聚焦至新的 block;
-          this.setCurrentBlock(b);
-        }
-      }
+  private handleKeydown(evt: HTMLElementEventMap['keydown'], that: Boed) {
+    if (evt.key === 'Enter') {
+      evt.preventDefault();
+      const nb = new Block();
+      that?._blocks?.push(nb);
     }
-    el.onclick = (evt) => {
+
+    if (evt.key === 'Backspace') {
       const target = evt.target as HTMLElement;
-      const b = this.findBlock(target);
-      if (b) this.setCurrentBlock(b);
-    }
-    el.onfocus = (evt) => {
-      const target = evt.target as HTMLElement;
-      const b = this.findBlock(target);
-      if (b) this.setCurrentBlock(b);
-    }
-    el.onblur = () => {
-      this.setCurrentBlock(null);
-    }
-    return el;
-  }
-
-  private mergeOpts() {
-    this._options = {...this._defaultOptions, ...this._options};
-  }
-
-  private setCurrentBlock(block: Block | null) {
-    this.currentBlock = block;
-    this.currentBlock?.focus();
-  }
-
-  private findBlock(el: HTMLElement) {
-    for (const b of this._blocks) {
-      if (b.target == el) {
-        return b;
+      if (!target.innerText) {
+        that?._blocks?.remove(target);
       }
     }
   }
-}
 
-function insertAfter(newEl: HTMLElement, target: HTMLElement | null = null) {
-  if (!target) return;
-
-  let parent = target.parentElement;
-  if (parent?.lastChild == target) {
-    parent.appendChild(newEl);
-  } else {
-    parent?.insertBefore(newEl, target.nextSibling);
+  private listen(evtName: keyof HTMLElementEventMap, handler: (evt: any, that: Boed) => void) {
+    const that = this;
+    this._options.mountNode?.addEventListener(evtName, (evt) => {
+      handler(evt, that);
+    });
   }
 }

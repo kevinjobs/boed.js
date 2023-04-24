@@ -65,6 +65,15 @@ export default class Block {
     }
   }
 
+  get id() :string {
+    return this._props.id || '';
+  }
+
+  // destory the dom
+  public destory() {
+    this._outerElement?.remove();
+  }
+
   public create() {
     const outerEl = this.createOuter();
     const containerEl = this.createContainer();
@@ -83,9 +92,6 @@ export default class Block {
     el.className = this._props.className;
     el.id = `boed-block-${(new Date()).valueOf()}`;
     el.dataset['create'] = String((new Date()).valueOf());
-    
-    el.style.margin = '2px 0px';
-    el.style.padding = '2px 8px';
 
     el.onclick = () => {
       this.focus();
