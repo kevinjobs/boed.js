@@ -10,7 +10,13 @@ export default defineConfig({
     {
       name: 'Boed',
       file: 'dist/index.js',
-      format: 'umd',
+      format: 'iife',
+      sourcemap: true
+    },
+    {
+      name: 'Boed',
+      file: 'dist/index.esm.js',
+      format: 'es',
     },
   ]
 })
