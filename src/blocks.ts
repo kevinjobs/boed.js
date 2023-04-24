@@ -9,20 +9,29 @@ export default class Blocks {
     this.push(new Block());
   }
 
-  public focusOn(el: HTMLElement, reset=false) {
-    const b = this.findBlock(el);
-    if (b) b.focus(reset);
+  private focusOn(b: Block, reset=false) {
+    b.focus(reset);
   }
 
-  public insert(targetBlock: Block, newBlock: Block) {
-    const el = this.renderAfter(targetBlock, newBlock);
-    this.focusOn(el);
+  public insert(target: Block | HTMLElement, newBlock: Block) {
+    let targetBlock: Block | null = null;
+    if (target instanceof Block) {
+      targetBlock = target;
+    } else if (target instanceof HTMLElement) {
+      targetBlock = this.findBlock(target);
+    }
+
+    if (targetBlock) {
+      this._blocks.push(newBlock);
+      this.renderAfter(targetBlock, newBlock);
+      this.focusOn(newBlock);
+    }
   }
 
   public push(b: Block) {
     this._blocks.push(b);
-    const el = this.renderLast(b);
-    this.focusOn(el);
+    this.renderLast(b);
+    this.focusOn(b);
   }
 
   /**
@@ -43,7 +52,7 @@ export default class Blocks {
       if (idx >= 0) {
         this._blocks.splice(idx, 1);
         b.destory();
-        const before = this._blocks[idx-1]?.target;
+        const before = this._blocks[idx-1];
         if (before) this.focusOn(before, reset);
       }
     }
@@ -52,6 +61,15 @@ export default class Blocks {
   // alias for remove
   public del(b: Block) {
     this.remove(b);
+  }
+
+  public click(target: Block | HTMLElement) {
+    if (target instanceof Block) {
+      this.focusOn(target);
+    } else if (target instanceof HTMLElement) {
+      const b = this.findBlock(target);
+      b && this.focusOn(b);
+    }
   }
 
   public indexOf(b: Block) {

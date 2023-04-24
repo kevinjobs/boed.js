@@ -28,18 +28,19 @@ export default class Boed {
 
   private handleClick(evt: HTMLElementEventMap['click'], that: Boed) {
     const target = evt.target as HTMLElement;
-    that?._blocks?.focusOn(target);
+    that?._blocks?.click(target);
   }
 
   private handleKeydown(evt: HTMLElementEventMap['keydown'], that: Boed) {
+    const target = evt.target as HTMLElement;
+
     if (evt.key === 'Enter') {
       evt.preventDefault();
       const nb = new Block();
-      that?._blocks?.push(nb);
+      that?._blocks?.insert(target, nb);
     }
 
     if (evt.key === 'Backspace') {
-      const target = evt.target as HTMLElement;
       if (!target.innerText) {
         evt.preventDefault();
         that?._blocks?.remove(target, true);

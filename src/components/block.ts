@@ -22,33 +22,12 @@ export interface BlockContent {
 }
 
 export default class Block {
-  private _outerElement: HTMLElement | null = null;
-  private _containerElement: HTMLElement | null = null;
+  private _blockElement: HTMLElement | null = null;
+  private _textareaElement: HTMLElement | null = null;
   private _props: BlockProps = {
     type: 'plain',
     className: 'boed-block',
   };
-  private _focused = new Proxy({
-    element: this._containerElement,
-    value: false,
-  }, {
-    set(target, prop, value) {
-      if (prop === 'element') {
-        target['element'] = value;
-        return true;
-      }
-      if (prop === 'value') {
-        target.value = value;
-        if (target.element && value) {
-          target.element.focus();
-        } else {
-          target.element?.blur();
-        }
-        return true;
-      }
-      return false;
-    }
-  });
 
   constructor(props?: BlockProps) {
     this._props = {...this._props, ...props};
@@ -56,33 +35,33 @@ export default class Block {
 
   get json() :BlockContent {
     return {
-      text: this._containerElement?.innerText || '',
-      html: this._containerElement?.innerHTML || '',
-      className: this._outerElement?.className || '',
-      id: this._outerElement?.id || '',
-      createAt: this._outerElement?.dataset?.create || '',
+      text: this._textareaElement?.innerText || '',
+      html: this._textareaElement?.innerHTML || '',
+      className: this._blockElement?.className || '',
+      id: this._blockElement?.id || '',
+      createAt: this._blockElement?.dataset?.create || '',
       type: this._props.type,
     }
   }
 
   get id() :string {
-    return this._props.id || '';
+    return this._props.id || this._blockElement?.id || '';
   }
 
   // destory the dom
   public destory() {
-    this._outerElement?.remove();
+    this._blockElement?.remove();
   }
 
   public create() {
     const outerEl = this.createOuter();
-    const containerEl = this.createContainer();
+    const containerEl = this.createTextArea();
     const operatorEl = this.createOperator();
     outerEl.appendChild(operatorEl);
     outerEl.appendChild(containerEl);
 
-    this._outerElement = outerEl;
-    this._containerElement = containerEl;
+    this._blockElement = outerEl;
+    this._textareaElement = containerEl;
 
     return outerEl;
   }
@@ -100,11 +79,11 @@ export default class Block {
     return el;
   }
 
-  private createContainer() {
-    const el = document.createElement(this.blockType());
+  private createTextArea() {
+    const el = document.createElement(this.blockType);
     el.contentEditable = 'true';
-    el.className = this._props.className + '-container';
-    el.id = `boed-block-container-${(new Date()).valueOf()}`;
+    el.className = this._props.className + '-textarea';
+    el.id = `boed-block-textarea-${(new Date()).valueOf()}`;
     el.style.outline = 'none';
     el.style.display = 'inline-block';
 
@@ -126,7 +105,50 @@ export default class Block {
     return el;
   }
 
-  private blockType() :keyof HTMLElementTagNameMap {
+  /**
+   * 聚焦至该 block
+   * @param reset 聚焦后将光标放置在尾部
+   */
+  public focus(reset=false) {
+    // this property can be set.
+    // @ts-ignore
+    this._blockElement?.className = this._props.className + ' focused';
+    this.focused = true;
+    // 重新聚焦后，光标可能在最前面，这段代码可以修复
+    if (this._textareaElement && reset) {
+      const range = document.createRange();
+      range.selectNodeContents(this._textareaElement);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }
+
+  public blur() {
+    // this property can be set.
+    // @ts-ignore
+    this._blockElement?.className = this._props.className;
+    this.focused = false;
+  }
+
+  private set focused(value: boolean) {
+    if (value) {
+      this._textareaElement?.focus();
+    } else {
+      this._textareaElement?.blur();
+    }
+  }
+
+  public get focused() {
+    return this._textareaElement?.id === document.activeElement?.id;
+  }
+
+  public get target() {
+    return this._blockElement;
+  }
+
+  private get blockType() :keyof HTMLElementTagNameMap {
     switch(this._props?.type) {
       case 'plain':
         return 'div';
@@ -135,42 +157,5 @@ export default class Block {
       default:
         return 'div';
     }
-  }
-
-  get target() {
-    return this._outerElement;
-  }
-
-  /**
-   * 聚焦至该 block
-   * @param reset 聚焦后将光标放置在尾部
-   */
-  focus(reset=false) {
-    this._focused.element = this._containerElement;
-    // this property can be set.
-    // @ts-ignore
-    this._outerElement?.className = this._props.className + ' focused';
-    this._focused.value = true;
-    // 重新聚焦后，光标可能在最前面，这段代码可以修复
-    if (this._containerElement && reset) {
-      const range = document.createRange();
-      range.selectNodeContents(this._containerElement);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-    }
-  }
-
-  blur() {
-    this._focused.element = this._containerElement;
-    // this property can be set.
-    // @ts-ignore
-    this._outerElement?.className = this._props.className;
-    this._focused.value = false;
-  }
-
-  get focused() {
-    return this._containerElement?.id === document.activeElement?.id;
   }
 }
