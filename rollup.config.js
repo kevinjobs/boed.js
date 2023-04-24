@@ -11,7 +11,7 @@ export default defineConfig({
       name: 'Boed',
       file: 'dist/index.js',
       format: 'iife',
-      sourcemap: true
+      sourcemap: false
     },
     {
       name: 'Boed',

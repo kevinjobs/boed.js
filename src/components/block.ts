@@ -70,7 +70,8 @@ export default class Block {
     const el = document.createElement('div');
     el.className = this._props.className;
     el.id = `boed-block-${(new Date()).valueOf()}`;
-    el.dataset['create'] = String((new Date()).valueOf());
+    // problem at ie9
+    // el.dataset['create'] = String((new Date()).valueOf());
 
     el.onclick = () => {
       this.focus();
