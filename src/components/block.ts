@@ -141,12 +141,25 @@ export default class Block {
     return this._outerElement;
   }
 
-  focus() {
+  /**
+   * 聚焦至该 block
+   * @param reset 聚焦后将光标放置在尾部
+   */
+  focus(reset=false) {
     this._focused.element = this._containerElement;
     // this property can be set.
     // @ts-ignore
     this._outerElement?.className = this._props.className + ' focused';
     this._focused.value = true;
+    // 重新聚焦后，光标可能在最前面，这段代码可以修复
+    if (this._containerElement && reset) {
+      const range = document.createRange();
+      range.selectNodeContents(this._containerElement);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
   }
 
   blur() {

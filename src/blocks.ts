@@ -9,9 +9,9 @@ export default class Blocks {
     this.push(new Block());
   }
 
-  public focusOn(el: HTMLElement) {
+  public focusOn(el: HTMLElement, reset=false) {
     const b = this.findBlock(el);
-    if (b) b.focus();
+    if (b) b.focus(reset);
   }
 
   public insert(targetBlock: Block, newBlock: Block) {
@@ -29,7 +29,7 @@ export default class Blocks {
    * remove a block
    * @param el Block or HTMLElment
    */
-  public remove(el: Block | HTMLElement) {
+  public remove(el: Block | HTMLElement, reset=false) {
     let b: Block | null = null;
 
     if (el instanceof Block) {
@@ -44,7 +44,7 @@ export default class Blocks {
         this._blocks.splice(idx, 1);
         b.destory();
         const before = this._blocks[idx-1]?.target;
-        if (before) this.focusOn(before);
+        if (before) this.focusOn(before, reset);
       }
     }
   }

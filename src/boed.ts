@@ -41,7 +41,8 @@ export default class Boed {
     if (evt.key === 'Backspace') {
       const target = evt.target as HTMLElement;
       if (!target.innerText) {
-        that?._blocks?.remove(target);
+        evt.preventDefault();
+        that?._blocks?.remove(target, true);
       }
     }
   }
