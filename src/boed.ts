@@ -1,12 +1,11 @@
-import Blocks from "./blocks";
-import Block from "./components/block";
+import BlockPool from "./pool";
 
 export interface Options {
   mountNode?: HTMLElement | null;
 }
 
 export default class Boed {
-  private _blocks: Blocks | null;
+  private _blockPool: BlockPool | null;
   private _defaultOptions: Options = {
     mountNode: document.querySelector('#boedjs') as HTMLElement,
   };
@@ -14,12 +13,12 @@ export default class Boed {
   constructor(private _options: Options) {
     this._options = { ...this._defaultOptions, ..._options };
     if (this._options.mountNode) {
-      this._blocks = new Blocks(this._options.mountNode);
+      this._blockPool = new BlockPool(this._options.mountNode);
     } else {
       const el = document.createElement('div');
       el.id = 'boedjs';
       document.appendChild(el);
-      this._blocks = new Blocks(el);
+      this._blockPool = new BlockPool(el);
     }
 
     this.listen('click', this.handleClick);
@@ -28,7 +27,7 @@ export default class Boed {
 
   private handleClick(evt: HTMLElementEventMap['click'], that: Boed) {
     const target = evt.target as HTMLElement;
-    that?._blocks?.click(target);
+    that?._blockPool?.click(target);
   }
 
   private handleKeydown(evt: HTMLElementEventMap['keydown'], that: Boed) {
@@ -36,14 +35,14 @@ export default class Boed {
 
     if (evt.key === 'Enter') {
       evt.preventDefault();
-      const nb = new Block();
-      that?._blocks?.insert(target, nb);
+      that?._blockPool?.insertAfterElement(target);
     }
 
     if (evt.key === 'Backspace') {
       if (!target.innerText) {
+        // avoid to delete the last word of the line before
         evt.preventDefault();
-        that?._blocks?.remove(target, true);
+        that?._blockPool?.removeByElement(target);
       }
     }
   }

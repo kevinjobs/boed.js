@@ -1,3 +1,5 @@
+import { DOM } from "./dom";
+
 export type BlockType =
   | 'plain'
   | 'h1'
@@ -21,10 +23,12 @@ export interface BlockContent {
   type: BlockType;
 }
 
-export default class Block {
-  private _blockElement: HTMLElement | null = null;
-  private _textareaElement: HTMLElement | null = null;
-  private _props: BlockProps = {
+export abstract class Block {
+  protected _block: DOM | null = null;
+  protected _textarea: DOM | null = null;
+  protected _operator: DOM | null = null;
+
+  protected _props: BlockProps = {
     type: 'plain',
     className: 'boed-block',
   };
@@ -33,123 +37,111 @@ export default class Block {
     this._props = {...this._props, ...props};
   }
 
-  get json() :BlockContent {
+  public get json() :BlockContent {
     return {
-      text: this._textareaElement?.innerText || '',
-      html: this._textareaElement?.innerHTML || '',
-      className: this._blockElement?.className || '',
-      id: this._blockElement?.id || '',
-      createAt: this._blockElement?.dataset?.create || '',
+      text: this._textarea?.text || '',
+      html: this._textarea?.html || '',
+      className: this._block?.className || '',
+      id: this._props.id || this._block?.id || '',
+      createAt: this._block?.createAt || '',
       type: this._props.type,
     }
   }
 
-  get id() :string {
-    return this._props.id || this._blockElement?.id || '';
-  }
-
-  // destory the dom
-  public destory() {
-    this._blockElement?.remove();
-  }
-
-  public create() {
-    const outerEl = this.createOuter();
-    const containerEl = this.createTextArea();
-    const operatorEl = this.createOperator();
-    outerEl.appendChild(operatorEl);
-    outerEl.appendChild(containerEl);
-
-    this._blockElement = outerEl;
-    this._textareaElement = containerEl;
-
-    return outerEl;
-  }
-
-  private createOuter() {
-    const el = document.createElement('div');
-    el.className = this._props.className;
-    el.id = `boed-block-${(new Date()).valueOf()}`;
-    // problem at ie9
-    // el.dataset['create'] = String((new Date()).valueOf());
-
-    el.onclick = () => {
-      this.focus();
+  public set focused(value: boolean) {
+    if (value) {
+      // @ts-ignore
+      this._block?.className = this._props.className + ' focused';
+      this._textarea?.focus();
+    } else {
+      // @ts-ignore
+      this._block?.className = this._props.className;
+      this._textarea?.blur();
     }
-    
-    return el;
   }
 
-  private createTextArea() {
-    const el = document.createElement(this.blockType);
-    el.contentEditable = 'true';
-    el.className = this._props.className + '-textarea';
-    el.id = `boed-block-textarea-${(new Date()).valueOf()}`;
-    el.style.outline = 'none';
-    el.style.display = 'inline-block';
-
-    el.onfocus = () => {
-      this.focus();
+  public get focused() {
+    if (!this._textarea?.focused) {
+      return false;
+    } else {
+      return this._textarea?.focused;
     }
-    el.onblur = () => {
-      this.blur();
-    }
-
-    return el;
   }
 
-  private createOperator() {
-    const el = document.createElement('span');
-    el.innerText = '+';
-    el.style.display = 'inline-block';
-    el.className = this._props.className + '-operator';
-    return el;
+  public get target() {
+    return this._block?.target;
   }
 
   /**
    * 聚焦至该 block
-   * @param reset 聚焦后将光标放置在尾部
    */
-  public focus(reset=false) {
-    // this property can be set.
-    // @ts-ignore
-    this._blockElement?.className = this._props.className + ' focused';
-    this.focused = true;
-    // 重新聚焦后，光标可能在最前面，这段代码可以修复
-    if (this._textareaElement && reset) {
-      const range = document.createRange();
-      range.selectNodeContents(this._textareaElement);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+  public focus() {
+    // 重新聚焦后，光标可能在最前面，这段代码可以将光标移至最后
+    if (!this.focused) {
+      this._textarea?.moveCursorEnd();
+      this.focused = true;
     }
   }
 
   public blur() {
     // this property can be set.
     // @ts-ignore
-    this._blockElement?.className = this._props.className;
+    if (this.focused) this._block?.className = this._props.className;
     this.focused = false;
   }
 
-  private set focused(value: boolean) {
-    if (value) {
-      this._textareaElement?.focus();
-    } else {
-      this._textareaElement?.blur();
-    }
+  public click() {
+    this.focus();
   }
 
-  public get focused() {
-    return this._textareaElement?.id === document.activeElement?.id;
+  // destory the dom
+  public destory() {
+    this._block?.destory();
   }
 
-  public get target() {
-    return this._blockElement;
+  public create() {
+    this._block = this.createBlock();
+    this._textarea = this.createTextArea();
+    this._operator = this.createOperator();
+
+    this._block.appendChild(this._operator);
+    this._block.appendChild(this._textarea);
+
+    return this._block.target;
   }
 
-  private get blockType() :keyof HTMLElementTagNameMap {
+  protected createBlock() {
+    const block = new DOM('div', {
+      className: this._props.className,
+      id: `boed-block-${(new Date()).valueOf()}`
+    });
+
+    return block;
+  }
+
+  protected createTextArea() {
+    const d = new DOM(this.blockType, {
+      className: this._props.className + '-textarea',
+      id: `boed-block-textarea-${(new Date()).valueOf()}`,
+    });
+
+    d.target.contentEditable = 'true';
+    d.target.style.outline = 'none';
+    d.target.style.display = 'inline-block';
+
+    return d;
+  }
+
+  protected createOperator() {
+    const o = new DOM('span', {
+      className: this._props.className + '-operator'
+    });
+    o.target.innerText = '+';
+    o.target.style.display = 'inline-block';
+    return o;
+  }
+
+  protected get blockType() :keyof HTMLElementTagNameMap {
     switch(this._props?.type) {
       case 'plain':
         return 'div';
@@ -158,5 +150,11 @@ export default class Block {
       default:
         return 'div';
     }
+  }
+}
+
+export class PlainBlock extends Block {
+  constructor(props?: BlockProps) {
+    super(props);
   }
 }
