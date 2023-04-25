@@ -71,6 +71,10 @@ export class DOM {
     DOMHandler.moveCursorEnd(this._el);
   }
 
+  public moveCursorStart() {
+    DOMHandler.moveCursorStart(this._el);
+  }
+
   public destory() {
     this._el.remove();
   }
@@ -125,13 +129,10 @@ export default class DOMHandler {
    * @returns void
    */
   public static moveCursorEnd(el: HTMLElement) :void {
-    if (!el.contentEditable) return;
-    // 重新聚焦后，光标可能在最前面，这段代码可以将光标移至最后
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel?.removeAllRanges();
-    sel?.addRange(range);
+    
+  }
+
+  public static moveCursorStart(el: HTMLElement) :void {
+    
   }
 }

@@ -108,4 +108,24 @@ export default class BlockPool {
       else b.blur();
     }
   }
+
+  public focusBefore(target: Block | HTMLElement) {
+    const idx = this.indexOf(target);
+    if (idx > 0) {
+      const b = this._blocks[idx-1];
+      this.focusOn(b);
+    } else {
+      return;
+    }
+  }
+
+  public focusAfter(target: Block | HTMLElement) {
+    const idx = this.indexOf(target);
+    if (idx < this._blocks.length - 1) {
+      const b = this._blocks[idx+1];
+      this.focusOn(b);
+    } else {
+      return;
+    }
+  }
 }

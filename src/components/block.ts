@@ -71,11 +71,14 @@ export abstract class Block {
     return this._blockDOM?.targetElement;
   }
 
+  public get textArea() {
+    return this._textareaDOM;
+  }
+
   /**
    * 聚焦至该 block
    */
   public focus() {
-    if (!this.focused) this._textareaDOM?.moveCursorEnd();
     this.focused = true;
   }
 
@@ -135,17 +138,15 @@ export abstract class Block {
 
     d.targetElement.contentEditable = 'true';
     d.targetElement.style.outline = 'none';
-    d.targetElement.style.display = 'inline-block';
 
     return d;
   }
 
   protected createOperator() {
-    const o = new DOM('span', {
+    const o = new DOM('div', {
       className: this._props.className + '-operator'
     });
-    o.targetElement.innerText = '+';
-    o.targetElement.style.display = 'inline-block';
+    o.targetElement.innerHTML = '&#5120;'
     return o;
   }
 

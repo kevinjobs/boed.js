@@ -33,6 +33,8 @@ export default class Boed {
   private handleKeydown(evt: HTMLElementEventMap['keydown'], that: Boed) {
     const target = evt.target as HTMLElement;
 
+    console.log('key: ', evt.key);
+
     if (evt.key === 'Enter') {
       evt.preventDefault();
       that?._blockPool?.onEnter(target);
@@ -45,6 +47,20 @@ export default class Boed {
         // avoid to delete the last word of the line before
         evt.preventDefault();
         that?._blockPool?.remove(target);
+      }
+    }
+
+    if (evt.key === 'ArrowUp') {
+      const sel = window.getSelection();
+      if (sel?.anchorOffset === 0) {
+        that?._blockPool?.focusBefore(target);
+      }
+    }
+
+    if (evt.key === 'ArrowDown') {
+      const sel = window.getSelection();
+      if (sel && sel?.anchorOffset > target.innerText.length - 1) {
+        that?._blockPool?.focusAfter(target);
       }
     }
   }
