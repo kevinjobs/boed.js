@@ -18,6 +18,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "@rollup/plugin-terser": "^0.4.1",
     "concurrently": "^8.0.1"
   }
 }

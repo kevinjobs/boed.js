@@ -1,5 +1,6 @@
 import { defineConfig } from 'rollup';
 import typescript from '@rollup/plugin-typescript';
+import terser from '@rollup/plugin-terser';
 
 export default defineConfig({
   input: './src/index.ts',
@@ -11,7 +12,14 @@ export default defineConfig({
       name: 'Boed',
       file: 'dist/index.js',
       format: 'iife',
-      sourcemap: false
+      sourcemap: true
+    },
+    {
+      name: 'Boed',
+      file: 'dist/index.min.js',
+      format: 'iife',
+      sourcemap: false,
+      plugins: [terser()],
     },
     {
       name: 'Boed',
