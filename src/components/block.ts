@@ -19,14 +19,13 @@ export interface BlockContent {
   html: string;
   className: string;
   id: string;
-  createAt: number | string;
   type: BlockType;
 }
 
 export abstract class Block {
-  protected _block: DOM | null = null;
-  protected _textarea: DOM | null = null;
-  protected _operator: DOM | null = null;
+  protected _blockDOM: DOM | null = null;
+  protected _textareaDOM: DOM | null = null;
+  protected _operatorDOM: DOM | null = null;
 
   protected _props: BlockProps = {
     type: 'plain',
@@ -35,15 +34,15 @@ export abstract class Block {
 
   constructor(props?: BlockProps) {
     this._props = {...this._props, ...props};
+    this.create();
   }
 
   public get json() :BlockContent {
     return {
-      text: this._textarea?.text || '',
-      html: this._textarea?.html || '',
-      className: this._block?.className || '',
-      id: this._props.id || this._block?.id || '',
-      createAt: this._block?.createAt || '',
+      text: this._textareaDOM?.text || '',
+      html: this._textareaDOM?.html || '',
+      className: this._blockDOM?.className || '',
+      id: this._blockDOM?.id || this._props.id || '',
       type: this._props.type,
     }
   }
@@ -51,63 +50,72 @@ export abstract class Block {
   public set focused(value: boolean) {
     if (value) {
       // @ts-ignore
-      this._block?.className = this._props.className + ' focused';
-      this._textarea?.focus();
+      this._blockDOM?.className = this._props.className + ' focused';
+      this._textareaDOM?.focus();
     } else {
       // @ts-ignore
-      this._block?.className = this._props.className;
-      this._textarea?.blur();
+      this._blockDOM?.className = this._props.className;
+      this._textareaDOM?.blur();
     }
   }
 
   public get focused() {
-    if (!this._textarea?.focused) {
+    if (!this._textareaDOM?.focused) {
       return false;
     } else {
-      return this._textarea?.focused;
+      return this._textareaDOM?.focused;
     }
   }
 
-  public get target() {
-    return this._block?.target;
+  public get targetElement() {
+    return this._blockDOM?.targetElement;
   }
 
   /**
    * 聚焦至该 block
    */
   public focus() {
-    // 重新聚焦后，光标可能在最前面，这段代码可以将光标移至最后
-    if (!this.focused) {
-      this._textarea?.moveCursorEnd();
-      this.focused = true;
-    }
+    if (!this.focused) this._textareaDOM?.moveCursorEnd();
+    this.focused = true;
   }
 
   public blur() {
-    // this property can be set.
-    // @ts-ignore
-    if (this.focused) this._block?.className = this._props.className;
     this.focused = false;
   }
 
-  public click() {
-    this.focus();
+  public onClick(cb?: any) {
+    if (cb) cb();
   }
 
   // destory the dom
   public destory() {
-    this._block?.destory();
+    this._blockDOM?.destory();
+  }
+
+  public isEqual(el: HTMLElement) {
+    if (el === this._blockDOM?.targetElement) return true;
+    if (el === this._textareaDOM?.targetElement) return true;
+    if (el === this._operatorDOM?.targetElement) return true;
+    return false;
+  }
+
+  public insertAfter(b: Block) {
+    if (b._blockDOM) this._blockDOM?.insertAfter(b._blockDOM);
+  }
+
+  public insertBefore(b: Block) {
+    if (b._blockDOM) this._blockDOM?.insertBefore(b._blockDOM);
   }
 
   public create() {
-    this._block = this.createBlock();
-    this._textarea = this.createTextArea();
-    this._operator = this.createOperator();
+    this._blockDOM = this.createBlock();
+    this._textareaDOM = this.createTextArea();
+    this._operatorDOM = this.createOperator();
 
-    this._block.appendChild(this._operator);
-    this._block.appendChild(this._textarea);
+    this._blockDOM.appendChild(this._operatorDOM);
+    this._blockDOM.appendChild(this._textareaDOM);
 
-    return this._block.target;
+    return this._blockDOM.targetElement;
   }
 
   protected createBlock() {
@@ -125,9 +133,9 @@ export abstract class Block {
       id: `boed-block-textarea-${(new Date()).valueOf()}`,
     });
 
-    d.target.contentEditable = 'true';
-    d.target.style.outline = 'none';
-    d.target.style.display = 'inline-block';
+    d.targetElement.contentEditable = 'true';
+    d.targetElement.style.outline = 'none';
+    d.targetElement.style.display = 'inline-block';
 
     return d;
   }
@@ -136,8 +144,8 @@ export abstract class Block {
     const o = new DOM('span', {
       className: this._props.className + '-operator'
     });
-    o.target.innerText = '+';
-    o.target.style.display = 'inline-block';
+    o.targetElement.innerText = '+';
+    o.targetElement.style.display = 'inline-block';
     return o;
   }
 

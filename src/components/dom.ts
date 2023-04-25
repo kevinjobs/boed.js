@@ -27,12 +27,24 @@ export class DOM {
     return this._el.innerText;
   }
 
+  public set text(value: string) {
+    this._el.innerText = value;
+  }
+
   public get html() {
     return this._el.innerHTML;
   }
 
+  public set html(value: string) {
+    this._el.innerHTML = value;
+  }
+
   public get id() {
     return this._el.id;
+  }
+
+  public set id(value: string) {
+    this._el.id = value;
   }
 
   public get className() {
@@ -43,10 +55,6 @@ export class DOM {
     this._el.className = value;
   }
 
-  public get createAt() {
-    return this._el.dataset?.create;
-  }
-
   public focus() {
     this._el.focus();
   }
@@ -55,7 +63,7 @@ export class DOM {
     this._el.blur();
   }
 
-  public get target() {
+  public get targetElement() {
     return this._el;
   }
 
@@ -69,7 +77,15 @@ export class DOM {
 
   public appendChild(d: DOM) {
     this._children.push(d);
-    this._el.appendChild(d.target);
+    this._el.appendChild(d.targetElement);
+  }
+
+  public insertAfter(d: DOM) {
+    DOMHandler.insertAfter(this._el, d.targetElement);
+  }
+
+  public insertBefore(d: DOM) {
+    DOMHandler.insertBefore(this._el, d.targetElement);
   }
 
   public listen(evtName: keyof HTMLElementEventMap, handler: (evt: any) => void) {

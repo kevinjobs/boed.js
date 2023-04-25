@@ -10,69 +10,39 @@ export default class BlockPool {
     this.add(new PlainBlock());
   }
 
-  /**
-   * 在指定的元素之后插入新的 Block
-   * @param target target element or Block
-   * @param type BlockType, 'plain' is default
-   */
-  public insertAfterElement(target: HTMLElement, type: BlockType = 'plain') {
-    this.insertAfter(target, type);
-  }
-
-  public insertAfterBlock(target: Block, type: BlockType = 'plain') {
-    this.insertAfter(target, type);
-  }
-
   public add(b: Block) {
     this._blocks.push(b);
-    this.renderLast(b);
+    if (b.targetElement) this.workspace.appendChild(b.targetElement);
+    // 添加新的 block 自动聚焦
     this.focusOn(b);
   }
 
-  /**
-   * remove a block
-   * @param el BaseBlock or HTMLElment
-   */
-  public removeByElement(el: HTMLElement) {
-    this.removeBy(el);
+  public remove(target: Block | HTMLElement) {
+    const b = target instanceof Block ? target : this.findBlock(target);
+
+    if (b && this._blocks.length > 1) {
+      const idx = this.indexOf(b);
+
+      console.log('index: ', idx);
+
+      if (idx >= 0) {
+        // 删除这个 Block
+        this._blocks.splice(idx, 1);
+        // 销毁这个 Block
+        b.destory();
+        // 聚焦至上一个 Block
+        // 如果是第一个被删除，则聚焦到递补上来的第一个
+        const before = this._blocks[idx-1];
+        if (before) {
+          this.focusOn(before)
+        } else {
+          this.focusOn(this._blocks[0]);
+        }
+      }
+    }
   }
 
-  public removeByBlock(b: Block) {
-    this.removeBy(b);
-  }
-
-  public click(el: HTMLElement) {
-    const b = this.findBlock(el);
-    b?.click();
-  }
-
-  /**
-   * find index of a Block
-   * @param b BaseBlock
-   * @returns index of the Block in blocks
-   */
-  private indexOf(b: Block) {
-    return this._blocks.indexOf(b);
-  }
-
-  private focusOn(b: Block) {
-    b.focus();
-  }
-
-  private renderLast(b: Block) {
-    const el = b.create();
-    this.workspace.append(el);
-    return el;
-  }
-
-  private renderAfter(targetBlock: Block, newBlock: Block) {
-    const targetEl = this.blockTarget(targetBlock);
-    const newEl = newBlock.create();
-    DOMHandler.insertAfter(targetEl, newEl);
-    return newEl;
-  }
-
-  private insertAfter(target: Block | HTMLElement, type: BlockType) {
+  public insertAfter(target: Block | HTMLElement, type: BlockType = 'paragraph') {
     let targetBlock = target instanceof HTMLElement ? this.findBlock(target) : target;
     let newBlock: Block;
 
@@ -86,39 +56,56 @@ export default class BlockPool {
     }
 
     if (targetBlock) {
-      this._blocks.push(newBlock);
-      this.renderAfter(targetBlock, newBlock);
+      const idx = this.indexOf(targetBlock);
+      // 新增的 block 插入到指定位置
+      this._blocks.splice(idx+1, 0, newBlock);
+      // 渲染 dom
+      if (targetBlock.targetElement && newBlock.targetElement) {
+        DOMHandler.insertAfter(targetBlock.targetElement, newBlock.targetElement);
+      }
+      // 聚焦至新的 block
       this.focusOn(newBlock);
     }
   }
 
-  private removeBy(target: Block | HTMLElement, reset=false) {
-    const b = target instanceof Block ? target : this.findBlock(target);
-
-    if (b && this._blocks.length > 1) {
-      const idx = this.indexOf(b);
-      if (idx >= 0) {
-        // 删除这个 Block
-        this._blocks.splice(idx, 1);
-        // 销毁这个 Block
-        b.destory();
-        // 聚焦至上一个 Block
-        const before = this._blocks[idx-1];
-        if (before) this.focusOn(before);
-      }
-    }
+  public onBackspace(el: HTMLElement) {
+    console.log('current block index: ', this.indexOf(el));
   }
 
-  private blockTarget(b: Block) {
-    return this.workspace.querySelector(`#${b.json.id}`) as HTMLElement;
+  public onEnter(el: HTMLElement) {
+    //
+  }
+
+  public onClick(el: HTMLElement) {
+    const b = this.findBlock(el);
+    if (b) this.focusOn(b);
+  }
+
+  /**
+   * find index of a Block
+   * @param b BaseBlock
+   * @returns index of the Block in blocks
+   */
+  private indexOf(target: Block | HTMLElement) {
+    if (target instanceof Block) {
+      return this._blocks.indexOf(target);
+    } else {
+      const b = this.findBlock(target);
+      if (b) return this._blocks.indexOf(b);
+    }
+    return -1;
   }
 
   private findBlock(el: HTMLElement) {
     for (const b of this._blocks) {
-      if (b.target === el || b.target?.contains(el)) {
-        return b;
-      }
+      if (b.isEqual(el)) return b;
     }
-    return null;
+  }
+
+  private focusOn(block: Block) {
+    for (const b of this._blocks) {
+      if (b === block) b.focus();
+      else b.blur();
+    }
   }
 }

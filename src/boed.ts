@@ -27,7 +27,7 @@ export default class Boed {
 
   private handleClick(evt: HTMLElementEventMap['click'], that: Boed) {
     const target = evt.target as HTMLElement;
-    that?._blockPool?.click(target);
+    that?._blockPool?.onClick(target);
   }
 
   private handleKeydown(evt: HTMLElementEventMap['keydown'], that: Boed) {
@@ -35,14 +35,16 @@ export default class Boed {
 
     if (evt.key === 'Enter') {
       evt.preventDefault();
-      that?._blockPool?.insertAfterElement(target);
+      that?._blockPool?.onEnter(target);
+      that?._blockPool?.insertAfter(target);
     }
 
     if (evt.key === 'Backspace') {
+      that?._blockPool?.onBackspace(target);
       if (!target.innerText) {
         // avoid to delete the last word of the line before
         evt.preventDefault();
-        that?._blockPool?.removeByElement(target);
+        that?._blockPool?.remove(target);
       }
     }
   }
