@@ -23,8 +23,6 @@ export default class BlockPool {
     if (b && this._blocks.length > 1) {
       const idx = this.indexOf(b);
 
-      console.log('index: ', idx);
-
       if (idx >= 0) {
         // 删除这个 Block
         this._blocks.splice(idx, 1);
@@ -43,17 +41,8 @@ export default class BlockPool {
   }
 
   public insertAfter(target: Block | HTMLElement, type: BlockType = 'paragraph') {
-    let targetBlock = target instanceof HTMLElement ? this.findBlock(target) : target;
-    let newBlock: Block;
-
-    switch(type) {
-      case 'plain':
-        newBlock = new PlainBlock();
-        break;
-      default:
-        newBlock = new PlainBlock();
-        break;
-    }
+    const targetBlock = target instanceof HTMLElement ? this.findBlock(target) : target;
+    const newBlock = this.createBlock(type);
 
     if (targetBlock) {
       const idx = this.indexOf(targetBlock);
@@ -66,14 +55,6 @@ export default class BlockPool {
       // 聚焦至新的 block
       this.focusOn(newBlock);
     }
-  }
-
-  public onBackspace(el: HTMLElement) {
-    console.log('current block index: ', this.indexOf(el));
-  }
-
-  public onEnter(el: HTMLElement) {
-    //
   }
 
   public onClick(el: HTMLElement) {
@@ -102,6 +83,15 @@ export default class BlockPool {
     }
   }
 
+  private createBlock(type: BlockType) {
+    switch(type) {
+      case 'plain':
+        return new PlainBlock();
+      default:
+        return new PlainBlock();
+    }
+  }
+
   private focusOn(block: Block) {
     for (const b of this._blocks) {
       if (b === block) b.focus();
@@ -113,7 +103,8 @@ export default class BlockPool {
     const idx = this.indexOf(target);
     if (idx > 0) {
       const b = this._blocks[idx-1];
-      this.focusOn(b);
+      // this.focusOn(b);
+      b.textArea?.moveCursorEnd();
     } else {
       return;
     }
@@ -123,7 +114,8 @@ export default class BlockPool {
     const idx = this.indexOf(target);
     if (idx < this._blocks.length - 1) {
       const b = this._blocks[idx+1];
-      this.focusOn(b);
+      // this.focusOn(b);
+      b.textArea?.moveCursorStart();
     } else {
       return;
     }

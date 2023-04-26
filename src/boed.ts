@@ -12,17 +12,22 @@ export default class Boed {
 
   constructor(private _options: Options) {
     this._options = { ...this._defaultOptions, ..._options };
+    
+    this._blockPool = this.load();
+
+    this.listen('click', this.handleClick);
+    this.listen('keydown', this.handleKeydown);
+  }
+
+  private load() {
     if (this._options.mountNode) {
-      this._blockPool = new BlockPool(this._options.mountNode);
+      return new BlockPool(this._options.mountNode);
     } else {
       const el = document.createElement('div');
       el.id = 'boedjs';
       document.appendChild(el);
-      this._blockPool = new BlockPool(el);
+      return new BlockPool(el);
     }
-
-    this.listen('click', this.handleClick);
-    this.listen('keydown', this.handleKeydown);
   }
 
   private handleClick(evt: HTMLElementEventMap['click'], that: Boed) {
@@ -32,17 +37,14 @@ export default class Boed {
 
   private handleKeydown(evt: HTMLElementEventMap['keydown'], that: Boed) {
     const target = evt.target as HTMLElement;
-
-    console.log('key: ', evt.key);
+    const sel = window.getSelection();
 
     if (evt.key === 'Enter') {
       evt.preventDefault();
-      that?._blockPool?.onEnter(target);
       that?._blockPool?.insertAfter(target);
     }
 
     if (evt.key === 'Backspace') {
-      that?._blockPool?.onBackspace(target);
       if (!target.innerText) {
         // avoid to delete the last word of the line before
         evt.preventDefault();
@@ -51,14 +53,12 @@ export default class Boed {
     }
 
     if (evt.key === 'ArrowUp') {
-      const sel = window.getSelection();
       if (sel?.anchorOffset === 0) {
         that?._blockPool?.focusBefore(target);
       }
     }
 
     if (evt.key === 'ArrowDown') {
-      const sel = window.getSelection();
       if (sel && sel?.anchorOffset > target.innerText.length - 1) {
         that?._blockPool?.focusAfter(target);
       }

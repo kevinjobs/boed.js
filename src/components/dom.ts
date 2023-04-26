@@ -129,10 +129,27 @@ export default class DOMHandler {
    * @returns void
    */
   public static moveCursorEnd(el: HTMLElement) :void {
+    el.onfocus = (evt) => evt.preventDefault();
+    el.onselect = (evt) => evt.preventDefault();
+
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
     
+    console.log(sel?.anchorNode, sel?.anchorOffset);
   }
 
   public static moveCursorStart(el: HTMLElement) :void {
-    
+    const sel = window.getSelection();
+    const range = document.createRange();
+
+    // range.selectNodeContents(el);
+    range.setStart(el, 1);
+    range.setEnd(el, 1);
+
+    sel?.removeAllRanges();
+    sel?.addRange(range);
   }
 }
